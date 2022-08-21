@@ -1,7 +1,7 @@
 import cv2
 import os
 
-def save_frames_from_video(video_path, start_time, stop_time, step_fps,
+def save_frames_from_video(video_path, start_sec, stop_sec, step_fps,
                      dir_path, base_name, ext='jpg'):
     cap = cv2.VideoCapture(video_path)
 
@@ -21,21 +21,18 @@ def save_frames_from_video(video_path, start_time, stop_time, step_fps,
     print("  FPS:", video_fps)
     print("  Video length [s]:", video_len_sec)
 
-    start_frame = int(start_time * video_fps)
-    stop_frame = int(stop_time * video_fps)
-
-    if start_frame < 0 or start_frame >= frame_count:
+    if start_sec < 0.0 or start_sec >= video_len_sec:
         print("Error: Start time is out of video length.")
         return
-
-    if stop_frame > frame_count:
-        stop_frame = frame_count
     
-    if stop_frame == start_time:
-        stop_frame += 1
-    elif stop_frame < start_frame:
+    if stop_sec == start_sec:
+        stop_sec += 1 / video_fps
+    elif stop_sec < start_sec:
         print("Error: Stop time should be more than or equal to start time.")
         return
+    
+    if stop_sec > video_len_sec:
+        stop_sec = video_len_sec
     
     os.makedirs(dir_path, exist_ok=True)
     base_path = os.path.join(dir_path, base_name)
@@ -48,22 +45,25 @@ def save_frames_from_video(video_path, start_time, stop_time, step_fps,
         print("Warning: step fps is more than video fps. So, video fps will be used.")
         step_fps = video_fps
     
-    step_frame = int(video_fps / step_fps)
+    step_sec = 1.0 / step_fps
 
     print("Reading frames...")
-    for n in range(start_frame, stop_frame, step_frame):
+    sec = start_sec
+    while sec < stop_sec:
+        n = round(video_fps * sec)
         cap.set(cv2.CAP_PROP_POS_FRAMES, n)
         ret, frame = cap.read()
         if ret:
             cv2.imwrite('{}_{}.{}'.format(base_path, str(n).zfill(digit), ext), frame)
         else:
             return
+        sec += step_sec
 
 video_path = 'sample.MP4'
-start_time = 0.0 # [s]
-stop_time = 0.0 # [s]
+start_sec = 0.0 # [s]
+stop_sec = 0.0 # [s]
 step_fps = 1.0 # If step_fps is 0.0, video fps will be used.
 dir_path = 'data/temp/result'
 base_name = 'video_frame'
 
-save_frames_from_video(video_path, start_time, stop_time, step_fps, dir_path, base_name)
+save_frames_from_video(video_path, start_sec, stop_sec, step_fps, dir_path, base_name)
