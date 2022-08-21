@@ -1,7 +1,7 @@
 import cv2
 import os
 
-def save_frames_from_video(video_path, start_sec, stop_sec, step_fps,
+def save_frames_from_video(video_path, start_sec, stop_sec, duration_sec, step_fps,
                      dir_path, base_name, ext='jpg'):
     cap = cv2.VideoCapture(video_path)
 
@@ -25,14 +25,14 @@ def save_frames_from_video(video_path, start_sec, stop_sec, step_fps,
         print("Error: Start time is out of video length.")
         return
     
+    if duration_sec > 0.0:
+        stop_sec = start_sec + duration_sec
+
     if stop_sec == start_sec:
         stop_sec += 1 / video_fps
     elif stop_sec < start_sec:
         print("Error: Stop time should be more than or equal to start time.")
         return
-    
-    if stop_sec > video_len_sec:
-        stop_sec = video_len_sec
     
     os.makedirs(dir_path, exist_ok=True)
     base_path = os.path.join(dir_path, base_name)
@@ -62,8 +62,9 @@ def save_frames_from_video(video_path, start_sec, stop_sec, step_fps,
 video_path = 'sample.MP4'
 start_sec = 0.0 # [s]
 stop_sec = 0.0 # [s]
+duration_sec = 0.0 # If duration_sec is more than 0.0, stop_sec will be ignored. [s]
 step_fps = 1.0 # If step_fps is 0.0, video fps will be used.
 dir_path = 'data/temp/result'
 base_name = 'video_frame'
 
-save_frames_from_video(video_path, start_sec, stop_sec, step_fps, dir_path, base_name)
+save_frames_from_video(video_path, start_sec, stop_sec, duration_sec, step_fps, dir_path, base_name)
