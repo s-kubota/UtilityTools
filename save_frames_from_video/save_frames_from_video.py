@@ -8,11 +8,23 @@ def save_frames_from_video(video_path, start_frame, stop_frame, step_frame,
     if not cap.isOpened():
         print("Video couldn't be opened.")
         return
+    
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps == 0:
+        print("Error: fps is 0.")
+        return
+
+    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    video_len_sec = frame_count / fps
+    
+    print("Video info")
+    print(" FPS:", fps)
+    print(" Video length [s]:", video_len_sec)
 
     os.makedirs(dir_path, exist_ok=True)
     base_path = os.path.join(dir_path, basename)
 
-    digit = len(str(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))))
+    digit = len(str(int(frame_count)))
 
     print("Reading frames...")
     for n in range(start_frame, stop_frame, step_frame):
