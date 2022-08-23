@@ -61,7 +61,9 @@ def save_frames_from_video(video_path, start_sec, stop_sec,
         if ret:
             cv2.imwrite('{}_{}.{}'.format(base_path, str(n).zfill(digit), ext), frame)
         else:
-            return
+            if n >= int(frame_count):
+                return
+            print(' Warning: Frame', str(n).zfill(digit), 'was missed.[Time:', sec, 's]')
         sec += step_sec
 
 # Call the main function
