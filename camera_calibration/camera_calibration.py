@@ -42,11 +42,11 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
         if ret == True:
             obj_points.append(objp)
 
-            corners2 = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1), criteria)
+            corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
             img_points.append(corners2)
 
             # Draw and display the corners
-            img = cv2.drawChessboardCorners(img, (cols,rows), corners2, ret)
+            img = cv2.drawChessboardCorners(img, (cols, rows), corners2, ret)
             cv2.imwrite('{}_{}.{}'.format(base_path_corners,
                                         str(n).zfill(digit), ext), img)
         n += 1
@@ -64,7 +64,7 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
     n = 0
     for fname in images:
         img = cv2.imread(fname)
-        h,  w = img.shape[:2]
+        h, w = img.shape[:2]
         new_camera_mtx, roi = cv2.getOptimalNewCameraMatrix(
                                             mtx, dist, (w, h), 1, (w, h))
         
@@ -77,6 +77,14 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
         cv2.imwrite('{}_{}.{}'.format(base_path_undistorted,
                                         str(n).zfill(digit), ext), dst)
         n += 1
+    
+    # Re-projection Error
+    mean_error = 0
+    for i in range(len(obj_points)):
+        img_points2, _ = cv2.projectPoints(obj_points[i], rvecs[i], tvecs[i], mtx, dist)
+        error = cv2.norm(img_points[i], img_points2, cv2.NORM_L2) / len(img_points2)
+        mean_error += error
+    print('mean error:', mean_error / len(obj_points), '[pixel]')
 
 # Call the main function
 camera_calibration(cols, rows, dir_path_input)
