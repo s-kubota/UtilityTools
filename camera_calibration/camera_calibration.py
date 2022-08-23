@@ -10,7 +10,7 @@ square_size = 1.0 # [cm]
 
 dir_path_input = 'data/input'
 
-def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
+def camera_calibration(cols, rows, square_size, dir_path_input, ext='jpg'):
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -55,6 +55,9 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
                                         str(n).zfill(digit), ext), img)
         n += 1
     
+    if len(img_points) == 0:
+        print("Error: Corners couldn't be detected in all images")
+
     # Calibration
     rms, camera_mtx, dist_coefs, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points,
                                                     gray.shape[::-1], None, None)
@@ -84,14 +87,6 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
         cv2.imwrite('{}_{}.{}'.format(base_path_undistorted,
                                         str(n).zfill(digit), ext), dst)
         n += 1
-    
-    # Re-projection Error
-    mean_error = 0
-    for i in range(len(obj_points)):
-        img_points2, _ = cv2.projectPoints(obj_points[i], rvecs[i], tvecs[i], camera_mtx, dist_coefs)
-        error = cv2.norm(img_points[i], img_points2, cv2.NORM_L2) / len(img_points2)
-        mean_error += error
-    print('\nmean error:', mean_error / len(obj_points), '[pixel]')
 
 # Call the main function
-camera_calibration(cols, rows, dir_path_input)
+camera_calibration(cols, rows, square_size, dir_path_input)
