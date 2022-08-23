@@ -3,15 +3,18 @@ import cv2
 import os
 import glob
 
+cols = 7
+rows = 6
+
 dir_path_input = 'data/input'
 
-def camera_calibration(dir_path_input, ext='jpg'):
+def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    objp = np.zeros((6 * 7, 3), np.float32)
-    objp[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
+    objp = np.zeros((rows * cols, 3), np.float32)
+    objp[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2)
 
     # Arrays to store object points and image points from all the images.
     obj_points = [] # 3d point in real world space
@@ -33,7 +36,7 @@ def camera_calibration(dir_path_input, ext='jpg'):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # Find the chess board corners
-        ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
+        ret, corners = cv2.findChessboardCorners(gray, (cols, rows), None)
 
         # If found, add object points, image points (after refining them)
         if ret == True:
@@ -43,7 +46,7 @@ def camera_calibration(dir_path_input, ext='jpg'):
             img_points.append(corners2)
 
             # Draw and display the corners
-            img = cv2.drawChessboardCorners(img, (7,6), corners2, ret)
+            img = cv2.drawChessboardCorners(img, (cols,rows), corners2, ret)
             cv2.imwrite('{}_{}.{}'.format(base_path_corners,
                                         str(n).zfill(digit), ext), img)
         n += 1
@@ -76,4 +79,4 @@ def camera_calibration(dir_path_input, ext='jpg'):
         n += 1
 
 # Call the main function
-camera_calibration(dir_path_input)
+camera_calibration(cols, rows, dir_path_input)
