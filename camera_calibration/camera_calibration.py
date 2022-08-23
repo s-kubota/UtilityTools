@@ -3,8 +3,10 @@ import cv2
 import os
 import glob
 
+# Chessboard info
 cols = 7
 rows = 6
+square_size = 1.0 # [cm]
 
 dir_path_input = 'data/input'
 
@@ -12,9 +14,11 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    objp = np.zeros((rows * cols, 3), np.float32)
-    objp[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2)
+    # prepare pattern points, like (0,0,0), (1*square_size,0,0), (2*square_size,0,0),....,
+    #                              ((cols-1)*square_size,(rows-1)*square_size,0)
+    pattern_points = np.zeros((rows * cols, 3), np.float32)
+    pattern_points[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2)
+    pattern_points *= square_size
 
     # Arrays to store object points and image points from all the images.
     obj_points = [] # 3d point in real world space
@@ -40,7 +44,7 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
 
         # If found, add object points, image points (after refining them)
         if ret == True:
-            obj_points.append(objp)
+            obj_points.append(pattern_points)
 
             corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
             img_points.append(corners2)
@@ -52,24 +56,27 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
         n += 1
     
     # Calibration
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points,
+    rms, camera_mtx, dist_coefs, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points,
                                                     gray.shape[::-1], None, None)
-    
+    print('\nRMS:', rms)
+    print('camera matrix:\n', camera_mtx)
+    print('distortion coefficients:\n', dist_coefs.ravel())
+
     # Undistortion
     dir_path_undistorted = 'data/result/undistorted'
     base_name_undistorted = 'undistorted_img'
     os.makedirs(dir_path_undistorted, exist_ok=True)
     base_path_undistorted = os.path.join(dir_path_undistorted, base_name_undistorted)
-    print("Undistorting...")
+    print("\nUndistorting...")
     n = 0
     for fname in images:
         img = cv2.imread(fname)
         h, w = img.shape[:2]
         new_camera_mtx, roi = cv2.getOptimalNewCameraMatrix(
-                                            mtx, dist, (w, h), 1, (w, h))
+                                            camera_mtx, dist_coefs, (w, h), 1, (w, h))
         
         # undistort
-        dst = cv2.undistort(img, mtx, dist, None, new_camera_mtx)
+        dst = cv2.undistort(img, camera_mtx, dist_coefs, None, new_camera_mtx)
 
         # crop the image
         x, y, w, h = roi
@@ -81,10 +88,10 @@ def camera_calibration(cols, rows, dir_path_input, ext='jpg'):
     # Re-projection Error
     mean_error = 0
     for i in range(len(obj_points)):
-        img_points2, _ = cv2.projectPoints(obj_points[i], rvecs[i], tvecs[i], mtx, dist)
+        img_points2, _ = cv2.projectPoints(obj_points[i], rvecs[i], tvecs[i], camera_mtx, dist_coefs)
         error = cv2.norm(img_points[i], img_points2, cv2.NORM_L2) / len(img_points2)
         mean_error += error
-    print('mean error:', mean_error / len(obj_points), '[pixel]')
+    print('\nmean error:', mean_error / len(obj_points), '[pixel]')
 
 # Call the main function
 camera_calibration(cols, rows, dir_path_input)
